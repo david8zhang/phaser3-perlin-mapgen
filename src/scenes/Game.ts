@@ -1,4 +1,6 @@
 import Phaser, { Physics } from 'phaser'
+import Perlin from 'phaser3-rex-plugins/plugins/perlin.js';
+
 
 export default class Game extends Phaser.Scene {
   public cursors!: Phaser.Types.Input.Keyboard.CursorKeys
@@ -27,12 +29,28 @@ export default class Game extends Phaser.Scene {
         text.setDepth(100)
       }
     }
+    const perlinTileGrid = this.generatePerlinTilegrid(100)
     return map
+  }
+  
+  generatePerlinTilegrid(scale: number) {
+    var noise = new Perlin(Math.random())    
+    const tileGrid: number[][] = [];
+    const width = 100
+    for (let i = 0; i < width; i++) {
+      tileGrid[i] = new Array(width)
+      for (let j = 0; j < width; j++) {
+        const x = i / scale
+        const y = j / scale
+        const value = noise.perlin2(x, y)
+        tileGrid[i][j] = value
+      }
+    }
+    return tileGrid
   }
 
   initTilemap() {
     const sampleMap = this.checkTiles()
-    console.log(sampleMap)
     this.map = this.make.tilemap({
       data: sampleMap,
       tileHeight: 16,

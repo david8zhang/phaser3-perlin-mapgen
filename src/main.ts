@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import { Plugin as NineSlicePlugin } from 'phaser3-nineslice'
+import PerlinPlugin from 'phaser3-rex-plugins/plugins/perlin-plugin.js';
 
 import Game from './scenes/Game'
 import Preloader from './scenes/Preloader'
@@ -21,7 +22,11 @@ const config: any = {
     },
   },
   plugins: {
-    global: [NineSlicePlugin.DefaultCfg],
+    global: [NineSlicePlugin.DefaultCfg, {
+      key: 'rexPerlin',
+      plugin: PerlinPlugin,
+      start: true
+    }],
   },
   scale: {
     mode: Phaser.Scale.FIT,
