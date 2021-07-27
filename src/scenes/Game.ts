@@ -25,7 +25,7 @@ export default class Game extends Phaser.Scene {
   public static DRY_SAND_TIILE = 0
   public static GRASS_TILE = 49
 
-  public mapScale = 100
+  public mapScale = 10
   public offsetX = 0
   public offsetY = 0
 
@@ -56,20 +56,11 @@ export default class Game extends Phaser.Scene {
   }
 
   generatePerlinTilegrid(config: PerlinConfig) {
-    const { seed, scale, lacunarity, octaves, persistence, height, width, offset } = config
+    const { seed, scale, height, width, offset } = config
     var noise = new Perlin(seed)
     const tileGrid: number[][] = []
     let maxNoiseHeight = Number.MIN_SAFE_INTEGER
     let minNoiseHeight = Number.MAX_SAFE_INTEGER
-
-    const prng = new Phaser.Math.RandomDataGenerator([seed.toString()])
-    const octaveOffsets: { x: number; y: number }[] = []
-    for (let i = 0; i < octaves; i++) {
-      const offsetX = prng.between(-100000, 100000) + offset.x
-      const offsetY = prng.between(-100000, 100000) + offset.y
-      const vector = { x: offsetX, y: offsetY }
-      octaveOffsets.push(vector)
-    }
 
     const halfWidth = width / 2
     const halfHeight = height / 2
@@ -77,24 +68,12 @@ export default class Game extends Phaser.Scene {
     for (let i = 0; i < height; i++) {
       tileGrid[i] = new Array(width)
       for (let j = 0; j < width; j++) {
-        let amplitude = 1
-        let frequency = 1
-        let noiseHeight = 0
-        for (let k = 0; k < octaves; k++) {
-          const x = ((i - halfHeight) / scale) * frequency + octaveOffsets[k].x
-          const y = ((j - halfWidth) / scale) * frequency + octaveOffsets[k].y
-
-          const perlinValue = noise.perlin2(x, y)
-          noiseHeight += perlinValue * amplitude
-          amplitude *= persistence
-          frequency *= lacunarity
-        }
-        if (noiseHeight > maxNoiseHeight) {
-          maxNoiseHeight = noiseHeight
-        } else if (noiseHeight < minNoiseHeight) {
-          minNoiseHeight = noiseHeight
-        }
-        tileGrid[i][j] = noiseHeight
+        const x = (i - halfHeight) / scale + offset.x
+        const y = (j - halfWidth) / scale + offset.y
+        const perlinValue = noise.perlin2(x, y)
+        maxNoiseHeight = Math.max(maxNoiseHeight, perlinValue)
+        minNoiseHeight = Math.min(minNoiseHeight, perlinValue)
+        tileGrid[i][j] = perlinValue
       }
     }
     for (let i = 0; i < width; i++) {
@@ -143,7 +122,6 @@ export default class Game extends Phaser.Scene {
     const rightDown = this.cursors.right?.isDown
     const upDown = this.cursors.up?.isDown
     const downDown = this.cursors.down?.isDown
-    const spaceDown = this.cursors.space?.isDown
     if (leftDown) {
       this.offsetY -= 0.1
       this.initTilemap()
@@ -158,10 +136,6 @@ export default class Game extends Phaser.Scene {
     }
     if (upDown) {
       this.offsetX -= 0.1
-      this.initTilemap()
-    }
-    if (spaceDown) {
-      this.mapScale -= 0.2
       this.initTilemap()
     }
   }
