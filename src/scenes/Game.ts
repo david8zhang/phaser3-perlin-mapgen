@@ -1,6 +1,8 @@
 import Phaser, { Physics } from 'phaser'
 import Perlin from 'phaser3-rex-plugins/plugins/perlin.js'
+import { Constants } from '~/utils/Constants'
 import { inverseLerp } from '../utils/utils'
+import { Player } from './Player'
 
 interface PerlinConfig {
   height: number
@@ -16,18 +18,12 @@ interface PerlinConfig {
 export default class Game extends Phaser.Scene {
   public cursors!: Phaser.Types.Input.Keyboard.CursorKeys
   public map!: Phaser.Tilemaps.Tilemap
-  public static TILE_HEIGHT = 16
-  public static TILE_WIDTH = 16
-
-  public static OCEAN_TILE = 38
-  public static SHALLOW_OCEAN_TILE = 25
-  public static WET_SAND_TILE = 12
-  public static DRY_SAND_TIILE = 0
-  public static GRASS_TILE = 49
-
-  public mapScale = 10
   public offsetX = 0
   public offsetY = 0
+
+  public player?: Player
+
+  public isMoving: boolean = false
 
   constructor() {
     super('game')
@@ -36,14 +32,17 @@ export default class Game extends Phaser.Scene {
   create(): void {
     this.cursors = this.input.keyboard.createCursorKeys()
     this.initTilemap()
+    this.player = new Player(this, 50, 50)
+    this.cameras.main.setBounds(0, 0, 200 * 16, 200 * 16)
+    this.cameras.main.startFollow(this.player.sprite, true)
   }
 
-  checkTiles() {
+  getTileMap() {
     const offset = { x: this.offsetX, y: this.offsetY }
     const perlinConfig = {
-      height: 40,
-      width: 40,
-      scale: this.mapScale,
+      height: Constants.MAP_HEIGHT,
+      width: Constants.MAP_WIDTH,
+      scale: Constants.PERLIN_MAP_SCALE,
       octaves: 4,
       persistence: 0.1,
       lacunarity: 1,
@@ -86,57 +85,69 @@ export default class Game extends Phaser.Scene {
 
   generateTileMapFromPerlinNoise(perlinTileMap: number[][]) {
     const map: number[][] = []
+    const elevationConfig = Constants.getElevationConfig()
+
     for (let i = 0; i < perlinTileMap.length; i++) {
       map[i] = new Array(perlinTileMap[0].length)
       for (let j = 0; j < perlinTileMap[0].length; j++) {
         const perlinValue = perlinTileMap[i][j]
-        if (perlinValue >= 0 && perlinValue <= 0.35) {
-          map[i][j] = Game.OCEAN_TILE
-        } else if (perlinValue > 0.35 && perlinValue <= 0.45) {
-          map[i][j] = Game.SHALLOW_OCEAN_TILE
-        } else if (perlinValue > 0.45 && perlinValue <= 0.55) {
-          map[i][j] = Game.WET_SAND_TILE
-        } else if (perlinValue > 0.55 && perlinValue <= 0.65) {
-          map[i][j] = Game.DRY_SAND_TIILE
-        } else if (perlinValue > 0.65 && perlinValue <= 1) {
-          map[i][j] = Game.GRASS_TILE
+        map[i][j] = Constants.getTileCodeForElevation(perlinValue, elevationConfig)
+      }
+    }
+
+    // Fill corners and edges
+    const directions = [
+      [0, 1],
+      [1, 0],
+      [0, -1],
+      [-1, 0],
+    ]
+
+    const isInBounds = (coord: number[]) => {
+      const [i, j] = coord
+      return i >= 0 && i < perlinTileMap.length && j >= 0 && j < perlinTileMap[0].length
+    }
+
+    let newMap = new Array(map.length).fill(0).map(() => new Array(map[0].length).fill(0))
+    for (let i = 0; i < map.length; i++) {
+      for (let j = 0; j < map[0].length; j++) {
+        const currTile = map[i][j]
+        const currPerlinTile = perlinTileMap[i][j]
+
+        // Check if the tile is an edge or corner tile
+        const left = [i, j - 1]
+        const right = [i, j + 1]
+        const upper = [i - 1, j]
+        const lower = [i + 1, j]
+
+        newMap[i][j] = map[i][j]
+        if (isInBounds(upper) && isInBounds(lower)) {
+          const upperTile = map[upper[0]][upper[1]]
+          const lowerTile = map[lower[0]][lower[1]]
+          const perlinMapUpper = perlinTileMap[upper[0]][upper[1]]
+
+          if (upperTile !== currTile && lowerTile == currTile && currPerlinTile > perlinMapUpper) {
+            newMap[i][j] = Constants.getEdgeTile(currTile, 'upper')
+          }
         }
       }
     }
-    return map
+
+    return newMap
   }
 
   initTilemap() {
-    const sampleMap = this.checkTiles()
+    const sampleMap = this.getTileMap()
     this.map = this.make.tilemap({
       data: sampleMap,
-      tileHeight: 16,
-      tileWidth: 16,
+      tileHeight: Constants.TILE_HEIGHT,
+      tileWidth: Constants.TILE_WIDTH,
     })
     const tileset = this.map.addTilesetImage('beach-tiles', 'beach-tiles')
     const layer = this.map.createLayer(0, tileset, 0, 0)
   }
 
   update() {
-    const leftDown = this.cursors.left?.isDown
-    const rightDown = this.cursors.right?.isDown
-    const upDown = this.cursors.up?.isDown
-    const downDown = this.cursors.down?.isDown
-    if (leftDown) {
-      this.offsetY -= 0.1
-      this.initTilemap()
-    }
-    if (rightDown) {
-      this.offsetY += 0.1
-      this.initTilemap()
-    }
-    if (downDown) {
-      this.offsetX += 0.1
-      this.initTilemap()
-    }
-    if (upDown) {
-      this.offsetX -= 0.1
-      this.initTilemap()
-    }
+    this.player?.update(this.cursors)
   }
 }
