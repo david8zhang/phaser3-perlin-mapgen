@@ -94,15 +94,6 @@ export default class Game extends Phaser.Scene {
         map[i][j] = Constants.getTileCodeForElevation(perlinValue, elevationConfig)
       }
     }
-
-    // Fill corners and edges
-    const directions = [
-      [0, 1],
-      [1, 0],
-      [0, -1],
-      [-1, 0],
-    ]
-
     const isInBounds = (coord: number[]) => {
       const [i, j] = coord
       return i >= 0 && i < perlinTileMap.length && j >= 0 && j < perlinTileMap[0].length
@@ -121,13 +112,175 @@ export default class Game extends Phaser.Scene {
         const lower = [i + 1, j]
 
         newMap[i][j] = map[i][j]
+
+        // Check if upper edge
         if (isInBounds(upper) && isInBounds(lower)) {
           const upperTile = map[upper[0]][upper[1]]
           const lowerTile = map[lower[0]][lower[1]]
           const perlinMapUpper = perlinTileMap[upper[0]][upper[1]]
+          const perlinMapLower = perlinTileMap[lower[0]][lower[1]]
 
           if (upperTile !== currTile && lowerTile == currTile && currPerlinTile > perlinMapUpper) {
             newMap[i][j] = Constants.getEdgeTile(currTile, 'upper')
+          } else if (
+            lowerTile !== currTile &&
+            upperTile == currTile &&
+            currPerlinTile > perlinMapLower
+          ) {
+            newMap[i][j] = Constants.getEdgeTile(currTile, 'lower')
+          }
+        }
+
+        // Check if right edge
+        if (isInBounds(right) && isInBounds(left)) {
+          const rightTile = map[right[0]][right[1]]
+          const leftTile = map[left[0]][left[1]]
+          const perlinMapRight = perlinTileMap[right[0]][right[1]]
+          const perlinMapLeft = perlinTileMap[left[0]][left[1]]
+          if (rightTile !== currTile && leftTile == currTile && currPerlinTile > perlinMapRight) {
+            newMap[i][j] = Constants.getEdgeTile(currTile, 'right')
+          } else if (
+            leftTile !== currTile &&
+            rightTile == currTile &&
+            currPerlinTile > perlinMapLeft
+          ) {
+            newMap[i][j] = Constants.getEdgeTile(currTile, 'left')
+          }
+        }
+
+        // Check if upper right corner
+        if (isInBounds(upper) && isInBounds(right)) {
+          const rightTile = map[right[0]][right[1]]
+          const upperTile = map[upper[0]][upper[1]]
+          const perlinRight = perlinTileMap[right[0]][right[1]]
+          const perlinUpper = perlinTileMap[upper[0]][upper[1]]
+          if (
+            rightTile !== currTile &&
+            upperTile !== currTile &&
+            currPerlinTile > perlinUpper &&
+            currPerlinTile > perlinRight
+          ) {
+            newMap[i][j] = Constants.getCornerTile(currTile, 'upperRight')
+          }
+        }
+
+        // Check if lower right corner
+        if (isInBounds(lower) && isInBounds(right)) {
+          const rightTile = map[right[0]][right[1]]
+          const lowerTile = map[lower[0]][lower[1]]
+          const perlinRight = perlinTileMap[right[0]][right[1]]
+          const perlinLower = perlinTileMap[lower[0]][lower[1]]
+          if (
+            rightTile !== currTile &&
+            lowerTile !== currTile &&
+            currPerlinTile > perlinLower &&
+            currPerlinTile > perlinRight
+          ) {
+            newMap[i][j] = Constants.getCornerTile(currTile, 'lowerRight')
+          }
+        }
+
+        // Check if lower right corner
+        if (isInBounds(lower) && isInBounds(left)) {
+          const leftTile = map[left[0]][left[1]]
+          const lowerTile = map[lower[0]][lower[1]]
+          const perlinLeft = perlinTileMap[left[0]][left[1]]
+          const perlinLower = perlinTileMap[lower[0]][lower[1]]
+          if (
+            leftTile !== currTile &&
+            lowerTile !== currTile &&
+            currPerlinTile > perlinLower &&
+            currPerlinTile > perlinLeft
+          ) {
+            newMap[i][j] = Constants.getCornerTile(currTile, 'lowerLeft')
+          }
+        }
+        // Check if lower right corner
+        if (isInBounds(upper) && isInBounds(left)) {
+          const leftTile = map[left[0]][left[1]]
+          const upperTile = map[upper[0]][upper[1]]
+          const perlinLeft = perlinTileMap[left[0]][left[1]]
+          const perlinUpper = perlinTileMap[upper[0]][upper[1]]
+          if (
+            leftTile !== currTile &&
+            upperTile !== currTile &&
+            currPerlinTile > perlinUpper &&
+            currPerlinTile > perlinLeft
+          ) {
+            newMap[i][j] = Constants.getCornerTile(currTile, 'upperLeft')
+          }
+        }
+
+        // Check inner corners
+        const leftUpperDiag = [i - 1, j - 1]
+        const rightUpperDiag = [i - 1, j + 1]
+        const leftLowerDiag = [i + 1, j - 1]
+        const rightLowerDiag = [i + 1, j + 1]
+        if (isInBounds(upper) && isInBounds(right) && isInBounds(rightUpperDiag)) {
+          const rightTile = map[right[0]][right[1]]
+          const upperTile = map[upper[0]][upper[1]]
+          const rightUpperDiagTile = map[rightUpperDiag[0]][rightUpperDiag[1]]
+          const perlinRightUpperDiag = perlinTileMap[rightUpperDiag[0]][rightUpperDiag[1]]
+          if (
+            rightTile == currTile &&
+            upperTile == currTile &&
+            rightUpperDiagTile !== currTile &&
+            currPerlinTile > perlinRightUpperDiag
+          ) {
+            if (newMap[i][j] == map[i][j]) {
+              newMap[i][j] = Constants.getCornerTile(currTile, 'upperInnerRight')
+            }
+          }
+        }
+
+        if (isInBounds(upper) && isInBounds(right) && isInBounds(leftUpperDiag)) {
+          const rightTile = map[right[0]][right[1]]
+          const upperTile = map[upper[0]][upper[1]]
+          const leftUpperDiagTile = map[leftUpperDiag[0]][leftUpperDiag[1]]
+          const perlinLeftUpperDiag = perlinTileMap[leftUpperDiag[0]][leftUpperDiag[1]]
+          if (
+            rightTile == currTile &&
+            upperTile == currTile &&
+            leftUpperDiagTile !== currTile &&
+            currPerlinTile > perlinLeftUpperDiag
+          ) {
+            if (newMap[i][j] == map[i][j]) {
+              newMap[i][j] = Constants.getCornerTile(currTile, 'upperInnerLeft')
+            }
+          }
+        }
+
+        if (isInBounds(lower) && isInBounds(left) && isInBounds(leftLowerDiag)) {
+          const leftTile = map[left[0]][left[1]]
+          const lowerTile = map[lower[0]][lower[1]]
+          const leftLowerDiagTile = map[leftLowerDiag[0]][leftLowerDiag[1]]
+          const perlinLeftLowerDiag = perlinTileMap[leftLowerDiag[0]][leftLowerDiag[1]]
+          if (
+            leftTile == currTile &&
+            lowerTile == currTile &&
+            leftLowerDiagTile !== currTile &&
+            currPerlinTile > perlinLeftLowerDiag
+          ) {
+            if (newMap[i][j] == map[i][j]) {
+              newMap[i][j] = Constants.getCornerTile(currTile, 'lowerInnerLeft')
+            }
+          }
+        }
+
+        if (isInBounds(lower) && isInBounds(right) && isInBounds(rightLowerDiag)) {
+          const rightTile = map[right[0]][right[1]]
+          const lowerTile = map[lower[0]][lower[1]]
+          const rightLowerDiagTile = map[rightLowerDiag[0]][rightLowerDiag[1]]
+          const perlinRightLowerDiag = perlinTileMap[rightLowerDiag[0]][rightLowerDiag[1]]
+          if (
+            rightTile == currTile &&
+            lowerTile == currTile &&
+            rightLowerDiagTile !== currTile &&
+            currPerlinTile > perlinRightLowerDiag
+          ) {
+            if (newMap[i][j] == map[i][j]) {
+              newMap[i][j] = Constants.getCornerTile(currTile, 'lowerInnerRight')
+            }
           }
         }
       }

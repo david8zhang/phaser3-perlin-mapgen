@@ -23,10 +23,10 @@ export class Constants {
   public static WET_SAND_LOWER_LEFT_CORNER = 18
   public static WET_SAND_LOWER_RIGHT_CORNER = 19
   public static WET_SAND_UPPER_LEFT_CORNER = 20
-  public static WET_SAND_LOWER_LEFT_INNER_CORNER = 21
-  public static WET_SAND_UPPER_LEFT_INNER_CORNER = 22
-  public static WET_SAND_UPPER_RIGHT_INNER_CORNER = 23
-  public static WET_SAND_LOWER_RIGHT_INNER_CORNER = 24
+  public static WET_SAND_LOWER_INNER_LEFT_CORNER = 21
+  public static WET_SAND_UPPER_INNER_LEFT_CORNER = 22
+  public static WET_SAND_UPPER_INNER_RIGHT_CORNER = 23
+  public static WET_SAND_LOWER_INNER_RIGHT_CORNER = 24
 
   public static SHALLOW_OCEAN_TILE = 25
   public static SHALLOW_OCEAN_LOWER_LEFT_CORNER = 26
@@ -94,6 +94,10 @@ export class Constants {
         upperRight: Constants.WET_SAND_UPPER_RIGHT_CORNER,
         lowerLeft: Constants.WET_SAND_LOWER_LEFT_CORNER,
         lowerRight: Constants.WET_SAND_LOWER_RIGHT_CORNER,
+        upperInnerRight: Constants.WET_SAND_UPPER_INNER_RIGHT_CORNER,
+        upperInnerLeft: Constants.WET_SAND_UPPER_INNER_LEFT_CORNER,
+        lowerInnerRight: Constants.WET_SAND_LOWER_INNER_RIGHT_CORNER,
+        lowerInnerLeft: Constants.WET_SAND_LOWER_INNER_LEFT_CORNER,
       },
       edges: {
         upper: Constants.WET_SAND_UPPER_EDGE,
@@ -109,6 +113,10 @@ export class Constants {
         upperRight: Constants.SHALLOW_OCEAN_UPPER_RIGHT_CORNER,
         lowerLeft: Constants.SHALLOW_OCEAN_LOWER_LEFT_CORNER,
         lowerRight: Constants.SHALLOW_OCEAN_LOWER_RIGHT_CORNER,
+        upperInnerRight: Constants.SHALLOW_OCEAN_UPPER_INNER_RIGHT_CORNER,
+        upperInnerLeft: Constants.SHALLOW_OCEAN_UPPER_INNER_LEFT_CORNER,
+        lowerInnerRight: Constants.SHALLOW_OCEAN_LOWER_INNER_RIGHT_CORNER,
+        lowerInnerLeft: Constants.SHALLOW_OCEAN_LOWER_INNER_LEFT_CORNER,
       },
       edges: {
         upper: Constants.SHALLOW_OCEAN_UPPER_EDGE,
@@ -168,6 +176,49 @@ export class Constants {
       }
     })
     return result
+  }
+
+  public static getCornerTile(tileCode: number, edgeType: string) {
+    const layer = Constants.getLayer(tileCode)
+    if (!layer) {
+      return tileCode
+    }
+    const layerConfig = this.LAYER_MAPPING[layer]
+    if (!layerConfig.corners) {
+      return tileCode
+    }
+    switch (edgeType) {
+      case 'upperRight': {
+        return layerConfig.corners.upperRight
+      }
+      case 'lowerRight': {
+        return layerConfig.corners.lowerRight
+      }
+      case 'upperLeft': {
+        return layerConfig.corners.upperLeft
+      }
+      case 'lowerLeft': {
+        return layerConfig.corners.lowerLeft
+      }
+      case 'upperInnerLeft': {
+        if (!layerConfig.corners.upperInnerLeft) return tileCode
+        return layerConfig.corners.upperInnerLeft
+      }
+      case 'upperInnerRight': {
+        if (!layerConfig.corners.upperInnerRight) return tileCode
+        return layerConfig.corners.upperInnerRight
+      }
+      case 'lowerInnerRight': {
+        if (!layerConfig.corners.lowerInnerRight) return tileCode
+        return layerConfig.corners.lowerInnerRight
+      }
+      case 'lowerInnerLeft': {
+        if (!layerConfig.corners.lowerInnerLeft) return tileCode
+        return layerConfig.corners.lowerInnerLeft
+      }
+      default:
+        return tileCode
+    }
   }
 
   public static getEdgeTile(tileCode: number, edgeType: string) {
