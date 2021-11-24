@@ -46,7 +46,7 @@ export default class Game extends Phaser.Scene {
       octaves: 4,
       persistence: 0.1,
       lacunarity: 1,
-      seed: 100,
+      seed: Math.floor(Math.random() * 1000),
       offset,
     }
     const perlinTileGrid = this.generatePerlinTilegrid(perlinConfig)
@@ -99,6 +99,51 @@ export default class Game extends Phaser.Scene {
       return i >= 0 && i < perlinTileMap.length && j >= 0 && j < perlinTileMap[0].length
     }
 
+    // Get rid of single tiles
+    for (let i = 0; i < map.length; i++) {
+      for (let j = 0; j < map[0].length; j++) {
+        const currTile = map[i][j]
+        // Check if the tile is an edge or corner tile
+        const left = [i, j - 1]
+        const right = [i, j + 1]
+        const upper = [i - 1, j]
+        const lower = [i + 1, j]
+
+        if (isInBounds(upper) && isInBounds(lower) && isInBounds(right)) {
+          const upperTile = map[upper[0]][upper[1]]
+          const lowerTile = map[lower[0]][lower[1]]
+          const rightTile = map[right[0]][right[1]]
+          if (upperTile == lowerTile && upperTile == rightTile && upperTile !== currTile) {
+            map[i][j] = upperTile
+          }
+        }
+        if (isInBounds(upper) && isInBounds(lower) && isInBounds(left)) {
+          const upperTile = map[upper[0]][upper[1]]
+          const lowerTile = map[lower[0]][lower[1]]
+          const leftTile = map[left[0]][left[1]]
+          if (upperTile == lowerTile && upperTile == leftTile && upperTile !== currTile) {
+            map[i][j] = upperTile
+          }
+        }
+        if (isInBounds(right) && isInBounds(lower) && isInBounds(left)) {
+          const rightTile = map[right[0]][right[1]]
+          const lowerTile = map[lower[0]][lower[1]]
+          const leftTile = map[left[0]][left[1]]
+          if (rightTile == lowerTile && rightTile == leftTile && rightTile !== currTile) {
+            map[i][j] = rightTile
+          }
+        }
+        if (isInBounds(right) && isInBounds(upper) && isInBounds(left)) {
+          const rightTile = map[right[0]][right[1]]
+          const upperTile = map[upper[0]][upper[1]]
+          const leftTile = map[left[0]][left[1]]
+          if (rightTile == upperTile && rightTile == leftTile && rightTile !== currTile) {
+            map[i][j] = rightTile
+          }
+        }
+      }
+    }
+
     let newMap = new Array(map.length).fill(0).map(() => new Array(map[0].length).fill(0))
     for (let i = 0; i < map.length; i++) {
       for (let j = 0; j < map[0].length; j++) {
@@ -120,11 +165,15 @@ export default class Game extends Phaser.Scene {
           const perlinMapUpper = perlinTileMap[upper[0]][upper[1]]
           const perlinMapLower = perlinTileMap[lower[0]][lower[1]]
 
-          if (upperTile !== currTile && lowerTile == currTile && currPerlinTile > perlinMapUpper) {
+          if (
+            upperTile !== currTile &&
+            (lowerTile == currTile || perlinMapLower > currPerlinTile) &&
+            currPerlinTile > perlinMapUpper
+          ) {
             newMap[i][j] = Constants.getEdgeTile(currTile, 'upper')
           } else if (
             lowerTile !== currTile &&
-            upperTile == currTile &&
+            (upperTile == currTile || perlinMapUpper > currPerlinTile) &&
             currPerlinTile > perlinMapLower
           ) {
             newMap[i][j] = Constants.getEdgeTile(currTile, 'lower')
@@ -137,11 +186,15 @@ export default class Game extends Phaser.Scene {
           const leftTile = map[left[0]][left[1]]
           const perlinMapRight = perlinTileMap[right[0]][right[1]]
           const perlinMapLeft = perlinTileMap[left[0]][left[1]]
-          if (rightTile !== currTile && leftTile == currTile && currPerlinTile > perlinMapRight) {
+          if (
+            rightTile !== currTile &&
+            (leftTile == currTile || perlinMapLeft > currPerlinTile) &&
+            currPerlinTile > perlinMapRight
+          ) {
             newMap[i][j] = Constants.getEdgeTile(currTile, 'right')
           } else if (
             leftTile !== currTile &&
-            rightTile == currTile &&
+            (rightTile == currTile || perlinMapRight > currPerlinTile) &&
             currPerlinTile > perlinMapLeft
           ) {
             newMap[i][j] = Constants.getEdgeTile(currTile, 'left')
@@ -233,13 +286,13 @@ export default class Game extends Phaser.Scene {
           }
         }
 
-        if (isInBounds(upper) && isInBounds(right) && isInBounds(leftUpperDiag)) {
-          const rightTile = map[right[0]][right[1]]
+        if (isInBounds(upper) && isInBounds(left) && isInBounds(leftUpperDiag)) {
+          const leftTile = map[left[0]][left[1]]
           const upperTile = map[upper[0]][upper[1]]
           const leftUpperDiagTile = map[leftUpperDiag[0]][leftUpperDiag[1]]
           const perlinLeftUpperDiag = perlinTileMap[leftUpperDiag[0]][leftUpperDiag[1]]
           if (
-            rightTile == currTile &&
+            leftTile == currTile &&
             upperTile == currTile &&
             leftUpperDiagTile !== currTile &&
             currPerlinTile > perlinLeftUpperDiag
