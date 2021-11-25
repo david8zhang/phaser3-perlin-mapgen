@@ -178,6 +178,11 @@ export class Constants {
     return result
   }
 
+  public static getLayerIndex(tileCode: number) {
+    const layerOrdering = ['OCEAN', 'SHALLOW_OCEAN', 'WET_SAND', 'SAND', 'GRASS']
+    return layerOrdering.indexOf(this.getLayer(tileCode))
+  }
+
   public static getCornerTile(tileCode: number, edgeType: string) {
     const layer = Constants.getLayer(tileCode)
     if (!layer) {

@@ -18,7 +18,7 @@ interface PerlinConfig {
 export default class Game extends Phaser.Scene {
   public cursors!: Phaser.Types.Input.Keyboard.CursorKeys
   public map!: Phaser.Tilemaps.Tilemap
-  public offsetX = 0
+  public offsetX = Constants.MAP_WIDTH
   public offsetY = 0
 
   public player?: Player
@@ -46,9 +46,10 @@ export default class Game extends Phaser.Scene {
       octaves: 4,
       persistence: 0.1,
       lacunarity: 1,
-      seed: Math.floor(Math.random() * 1000),
+      seed: 200,
       offset,
     }
+    console.log(perlinConfig.seed)
     const perlinTileGrid = this.generatePerlinTilegrid(perlinConfig)
     const tileMap = this.generateTileMapFromPerlinNoise(perlinTileGrid)
     return tileMap
@@ -144,6 +145,7 @@ export default class Game extends Phaser.Scene {
       }
     }
 
+    // Basic edge cases
     let newMap = new Array(map.length).fill(0).map(() => new Array(map[0].length).fill(0))
     for (let i = 0; i < map.length; i++) {
       for (let j = 0; j < map[0].length; j++) {
@@ -339,6 +341,52 @@ export default class Game extends Phaser.Scene {
       }
     }
 
+    // Out of bounds tile cases
+    for (let i = 0; i < map.length; i++) {
+      for (let j = 0; j < map[0].length; j++) {
+        const currTile = map[i][j]
+        const currPerlinTile = perlinTileMap[i][j]
+
+        // Check if the tile is an edge or corner tile
+        const left = [i, j - 1]
+        const right = [i, j + 1]
+        const upper = [i - 1, j]
+        const lower = [i + 1, j]
+        // if (isInBounds(upper) && !isInBounds(lower)) {
+        //   const upperPerlinTile = perlinTileMap[upper[0]][upper[1]]
+        //   if (upperPerlinTile < currPerlinTile) {
+        //     newMap[i][j] = Constants.getEdgeTile(currTile, 'upper')
+        //   }
+        // }
+        if (!isInBounds(upper) && isInBounds(lower)) {
+          const lowerTile = map[lower[0]][lower[1]]
+          if (
+            Constants.getLayerIndex(lowerTile) < Constants.getLayerIndex(currTile) &&
+            newMap[i][j] == map[i][j]
+          ) {
+            newMap[i][j] = Constants.getEdgeTile(currTile, 'lower')
+          }
+        }
+        if (!isInBounds(right) && isInBounds(left)) {
+          const leftTile = map[left[0]][left[1]]
+          if (
+            Constants.getLayerIndex(leftTile) < Constants.getLayerIndex(currTile) &&
+            newMap[i][j] == map[i][j]
+          ) {
+            newMap[i][j] = Constants.getEdgeTile(currTile, 'left')
+          }
+        }
+        if (!isInBounds(left) && isInBounds(right)) {
+          const rightTile = map[right[0]][right[1]]
+          if (
+            Constants.getLayerIndex(rightTile) < Constants.getLayerIndex(currTile) &&
+            newMap[i][j] == map[i][j]
+          ) {
+            newMap[i][j] = Constants.getEdgeTile(currTile, 'right')
+          }
+        }
+      }
+    }
     return newMap
   }
 
