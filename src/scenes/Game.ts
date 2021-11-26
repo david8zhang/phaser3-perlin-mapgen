@@ -24,6 +24,7 @@ export default class Game extends Phaser.Scene {
   public player?: Player
 
   public isMoving: boolean = false
+  public layerMapping = {}
 
   constructor() {
     super('game')
@@ -49,7 +50,6 @@ export default class Game extends Phaser.Scene {
       seed: 200,
       offset,
     }
-    console.log(perlinConfig.seed)
     const perlinTileGrid = this.generatePerlinTilegrid(perlinConfig)
     const tileMap = this.generateTileMapFromPerlinNoise(perlinTileGrid)
     return tileMap
@@ -352,12 +352,6 @@ export default class Game extends Phaser.Scene {
         const right = [i, j + 1]
         const upper = [i - 1, j]
         const lower = [i + 1, j]
-        // if (isInBounds(upper) && !isInBounds(lower)) {
-        //   const upperPerlinTile = perlinTileMap[upper[0]][upper[1]]
-        //   if (upperPerlinTile < currPerlinTile) {
-        //     newMap[i][j] = Constants.getEdgeTile(currTile, 'upper')
-        //   }
-        // }
         if (!isInBounds(upper) && isInBounds(lower)) {
           const lowerTile = map[lower[0]][lower[1]]
           if (
@@ -390,15 +384,43 @@ export default class Game extends Phaser.Scene {
     return newMap
   }
 
+  splitIntoLayers(data: number[][]) {
+    const layers = {}
+    Constants.LAYERS.forEach((layerName: string) => {
+      layers[layerName] = new Array(data.length)
+        .fill(-1)
+        .map(() => new Array(data[0].length).fill(-1))
+    })
+    for (let i = 0; i < data.length; i++) {
+      for (let j = 0; j < data[0].length; j++) {
+        const tileCode = data[i][j]
+        const tileType = Constants.getLayer(tileCode)
+        const layer = Constants.TILE_TYPE_TO_LAYER_MAPPING[tileType]
+        layers[layer][i][j] = tileCode
+      }
+    }
+    return layers
+  }
+
   initTilemap() {
     const sampleMap = this.getTileMap()
+    const layerMapping = this.splitIntoLayers(sampleMap)
+
     this.map = this.make.tilemap({
-      data: sampleMap,
+      height: Constants.MAP_HEIGHT,
+      width: Constants.MAP_WIDTH,
       tileHeight: Constants.TILE_HEIGHT,
       tileWidth: Constants.TILE_WIDTH,
     })
     const tileset = this.map.addTilesetImage('beach-tiles', 'beach-tiles')
-    const layer = this.map.createLayer(0, tileset, 0, 0)
+    const layers = ['Grass', 'Sand', 'Ocean']
+    layers.forEach((layerName) => {
+      const newLayer = this.map.createBlankLayer(layerName, tileset, 0, 0)
+      newLayer.putTilesAt(layerMapping[layerName], 0, 0)
+      this.layerMapping[layerName] = newLayer
+    })
+    this.layerMapping['Ocean'].setCollisionByExclusion([-1])
+    console.log(this.layerMapping)
   }
 
   update() {

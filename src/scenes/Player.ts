@@ -7,6 +7,8 @@ export class Player {
   constructor(game: Game, x: number, y: number) {
     this.game = game
     this.sprite = game.physics.add.sprite(x, y, 'player')
+    this.game.physics.world.enableBody(this.sprite, Phaser.Physics.Arcade.DYNAMIC_BODY)
+    this.game.physics.add.collider(this.sprite, this.game.layerMapping['Ocean'])
   }
   update(cursors: Phaser.Types.Input.Keyboard.CursorKeys) {
     const leftDown = cursors.left.isDown

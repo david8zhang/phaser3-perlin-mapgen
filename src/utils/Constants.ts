@@ -130,6 +130,15 @@ export class Constants {
     },
   }
 
+  public static TILE_TYPE_TO_LAYER_MAPPING = {
+    OCEAN: 'Ocean',
+    SHALLOW_OCEAN: 'Sand',
+    WET_SAND: 'Sand',
+    SAND: 'Sand',
+    GRASS: 'Grass',
+  }
+  public static LAYERS = ['Ocean', 'Sand', 'Grass']
+
   // Map sizes
   public static TILE_HEIGHT = 16
   public static TILE_WIDTH = 16
@@ -171,7 +180,15 @@ export class Constants {
     let result = ''
     Object.keys(Constants.LAYER_MAPPING).forEach((layer) => {
       const tiles = Constants.LAYER_MAPPING[layer].tiles
-      if (tiles.includes(tileCode)) {
+      const corners = Constants.LAYER_MAPPING[layer].corners
+      const edges = Constants.LAYER_MAPPING[layer].edges
+      const allCornerTiles = corners ? Object.keys(corners).map((key) => corners[key]) : []
+      const allEdgeTiles = edges ? Object.keys(edges).map((key) => edges[key]) : []
+      if (
+        tiles.includes(tileCode) ||
+        allCornerTiles.includes(tileCode) ||
+        allEdgeTiles.includes(tileCode)
+      ) {
         result = layer
       }
     })
